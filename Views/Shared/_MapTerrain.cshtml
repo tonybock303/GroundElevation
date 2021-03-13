@@ -8,22 +8,33 @@
     <style>
 
         #map {
-            width: 100%;
-            height: 100%;
-            
-            order: 1px solid #ddd;
+            border: 1px solid #ddd;
             padding: 1px;
             border-radius: 4px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .mapContainer {
+            height: 450px;
+            width: 800px;
             margin-left: auto;
             margin-right: auto;
+            display: none;
+        }
+
+        .holdingContainer {
+            height: 450px;
+            width: 100%;
         }
     </style>
 </head>
 <br />
-
-<div id="map" class="row"></div>
-
-
+<div class="holdingContainer">
+    <div class="mapContainer">
+        <div id="map" class="row"></div>
+    </div>
+</div>
 @{
     var startLng = Model.StartCoordsLng;
     var startLat = Model.StartCoordsLat;
@@ -33,15 +44,23 @@
     var midLat = Model.MidCoordLat;
     var totalDistance = Model.TotalDistance;
     var numUp = (totalDistance * 1000);
-    var zoom = numUp * 0.65;
+    var zoom = numUp * 0.69;
     var originLng = startLng;
     var originLat = startLat;
     var midBearing = 50;
 
+
+    var scaler = 0.005;
+    var latBound1 = midLat - scaler;
+    var lngBound1 = midLng - scaler;
+    var latBound2 = midLat + scaler;
+    var lngBound2 = midLng + scaler;
+
+
 }
 <script>
     $(document).ready(function () {
-        
+
         var loadedCount = 0;
         mapboxgl.accessToken = 'pk.eyJ1IjoidGhlcGhvZW5peDI1IiwiYSI6ImNrbTR6M3h0bzA5ZXgyeGtuY2ZnMjB6cnoifQ.lvIzFpjHc1uKMGWWywoUNA';
         var zoom = @zoom;
@@ -50,15 +69,23 @@
             style: 'mapbox://styles/thephoenix25/ckm7lc2nj4ibd17q3tltlvz47',
             center: [@midLng, @midLat],
             zoom: zoom,
-            pitch: 70,
+            pitch: 65,
             bearing: @midBearing,
+            bounds : [
+            [@lngBound1, @latBound1], // [west, south]
+            [@lngBound2, @latBound2]  // [east, north]
+        ]
         });
+
+        //50.758736732846785, -1.983127781139956	50.77809984376799, -1.977283557031626
+
+
         map.on('load', function () {
             map.addSource('mapbox-dem', {
                 'type': 'raster-dem',
                 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-                'tileSize': 512,
-                'maxzoom': 16
+                'tileSize':128,
+                'maxzoom': 12
             });
 
             // add the DEM source as a terrain layer with exaggerated height
@@ -117,6 +144,8 @@
             }
         });
         map.on('click', function () {
+            console.log("clicked, stopping rotation");
+            map.stop();
             map.flyTo({
                 center: [@midLng, @midLat],
                 zoom: zoom,
@@ -138,7 +167,10 @@
                 }*@
                 rotating = true;
                 // Start the animation.
-                rotateCamera(0)
+                rotateCamera(0);
+
+                $('.mapContainer').show();
+                map.resize();
             }
         });
         loaded = false;
@@ -189,7 +221,4 @@
             requestAnimationFrame(rotateCamera);
         }
     });
-
-
-
 </script>
