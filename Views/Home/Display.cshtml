@@ -1,0 +1,239 @@
+﻿@model GroundElevation.Models.HomeViewModel
+
+@{
+    ViewBag.Title = "Dispaly";
+}
+<head>
+    <script src="~/Scripts/bootstrap.min.js"></script>
+    <script src="~/Scripts/Chart.min.js"></script>
+
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js"></script>
+    <script src="~/Scripts/jquery-3.4.1.min.js"></script>
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        #chart_container {
+            width: 1140px;
+            height: 500px;
+            border: 1px solid #ddd;
+            padding: 1px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+@{
+    var startLng = Model.StartCoordsLng;
+    var startLat = Model.StartCoordsLat;
+    var finishLng = Model.FinishCoordsLng;
+    var finishLat = Model.FinishCoordsLat;
+    var midLng = Model.MidCoordLng;
+    var midLat = Model.MidCoordLat;
+ 
+    var zoom = 14;
+
+    string url = "https://api.mapbox.com/styles/v1/mapbox/light-v10/static/pin-s-l+000(" + startLng + "," + startLat + "),pin-s-l+000(" + finishLng + "," + finishLat + ")/" + midLng + "," + midLat + "," + zoom + "/1150x600?access_token=pk.eyJ1IjoidGhlcGhvZW5peDI1IiwiYSI6ImNrbTR6M3h0bzA5ZXgyeGtuY2ZnMjB6cnoifQ.lvIzFpjHc1uKMGWWywoUNA";
+    var results = Model.Results;
+}
+
+@Html.Partial("_MapTerrain");
+<div id="chart_container">
+    <canvas id="line_chart"></canvas>
+</div>
+
+
+<img src="@url">
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            Lng
+        </th>
+        <th>
+            Elevation
+        </th>
+        <th>
+            Lat
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model.Results)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.location.lng)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.elevation)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.location.lat)
+            </td>
+            <td>
+                @Html.ActionLink("Edit", "Edit", new { id = item.id }) |
+                @Html.ActionLink("Details", "Details", new { id = item.id }) |
+                @Html.ActionLink("Delete", "Delete", new { id = item.id })
+            </td>
+        </tr>
+    }
+
+</table>
+
+<script>
+    $(document).ready(function () {
+        var elevations = @Html.Raw(Json.Encode(Model.Results.Select(x => x.elevation).ToArray()));
+        var intervals = @Html.Raw(Json.Encode(ViewBag.Intervals));
+        var flightHeight = @Html.Raw(Json.Encode(ViewBag.FlightHeight));
+
+        var treeLineHeight = @Html.Raw(Json.Encode(ViewBag.TreeLineHeight));
+        var multiArray = @Html.Raw(Json.Encode(ViewBag.MultiArray));
+        var indexOfPoi = @Html.Raw(Json.Encode(ViewBag.IndexOfPoi));
+        var t = multiArray[0].Length;
+        var datasetValue = [];
+
+        datasetValue[0] =
+        {
+            label: "Elevations",
+            data: elevations,
+            backgroundColor: ["rgba(255, 0, 0, 1.0)", "rgba(255, 0, 0, 1.0)", "(255, 0, 0, 1.0)"],
+            borderColor: ["rgba(255, 0, 0)", "rgba(255, 0, 0)", "(255, 0, 0)"],
+            borderWidth: 2,
+            pointRadius: 0
+        };
+        datasetValue[1] =
+        {
+            label: "Tree Line",
+            data: treeLineHeight,
+            backgroundColor: ["rgba(10, 250, 10, .5)", "rgba(10, 250, 10, .5)", "(10, 250, 10, .5)"],
+            borderColor: ["rgba(10, 250, 10)", "rgba(10, 250, 10)", "(10, 250, 10)"],
+            borderWidth: 1,
+            pointRadius: 0
+        };
+        datasetValue[2] =
+        {
+            label: "Flight Height",
+            data: flightHeight,
+            backgroundColor: ["rgba(200, 200, 0, .5)", "rgba(145, 65, 72, .5)", "(0, 0, 0, .5)"],
+            borderColor: ["rgba(242, 166, 54)", "rgba(145, 65, 72)", "(0, 0, 0)"],
+            borderWidth: 1,
+            pointRadius: 0
+        };
+
+        var personHeight = [1];
+        personHeight[0] = elevations[0] + 5;
+
+        datasetValue[3] =
+        {
+            label: "Person",
+            data: personHeight,
+            borderWidth: 0,
+            pointRadius: 5
+        };
+
+        var poiHeight = [intervals];
+
+        poiHeight[indexOfPoi] = elevations[indexOfPoi] + 5;
+        datasetValue[6] =
+        {
+            label: "POI",
+            data: poiHeight,
+            borderColor: ["rgba(242, 166, 54)", "rgba(145, 65, 72)", "(0, 0, 0)"],
+            borderWidth: 2,
+            pointRadius: 10
+        };
+
+        var intervalCount = @Model.Results.Count();
+
+        var maxHeightFromGround = [intervalCount];
+        for (var k = 0; k < intervalCount; k++) {
+            maxHeightFromGround[k] = elevations[k] + 150;
+        }
+        datasetValue[4] = {
+            label: "150ft",
+            data: maxHeightFromGround,
+            backgroundColor: ["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)", "(0, 0, 0, 0)"],
+            borderColor: ["rgba(0, 0, 100, 1)", "rgba(0, 0, 100, 1)", "(0, 0, 100, 1)"],
+            borderWidth: 1,
+            pointRadius: 0
+        };
+
+        var maxHeightFromGround400 = [intervalCount];
+        for (var k = 0; k < intervalCount; k++) {
+            maxHeightFromGround400[k] = elevations[k] + 400;
+        }
+        datasetValue[5] = {
+            label: "400ft",
+            data: maxHeightFromGround400,
+            backgroundColor: ["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)", "(0, 0, 0, 0)"],
+            borderColor: ["rgba(0, 100, 100, 1)", "rgba(0, 100, 100, 1)", "(0, 100, 100, 1)"],
+            borderWidth: 1,
+            pointRadius: 0
+        };
+
+
+
+        var priorDataSetCount = 6;
+
+        var count = 20; // Number of deadzone lines
+        for (var j = priorDataSetCount + 1; j < count + priorDataSetCount + 1; j++) {
+            datasetValue[j] = {
+                label: null,
+                data: multiArray[j - (priorDataSetCount + 1)],
+                backgroundColor: ["rgba(0, 0, 0, 0.95)", "rgba(0, 0, 0, 1)", "(0, 0, 0, 1)"],
+                borderColor: ["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0)", "(0, 0, 0, 0)"],
+                borderWidth: 0,
+                pointRadius: 0
+            };
+        }
+
+
+        var ctx = $('#line_chart');
+        var barChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: intervals,
+                datasets: datasetValue
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: "Distance"
+                        },
+                        ticks: {
+                            beginAtZero: true,
+                            maxTicksLimit: 24
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: "Elevation",
+                        },
+                        ticks: {
+                            beginAtZero: false,
+                            max: intervals[intervals.Length - 1] // 400 + elevations[0],
+                        }
+                    }]
+                },
+                responsive: true,
+                legend: {
+                    display: true,
+                    labels: {
+                        filter: function (legendItem, data) {
+                            return legendItem.datasetIndex <= priorDataSetCount;
+                        }
+                    }
+                },
+            }
+        });
+    });
+</script>
+
