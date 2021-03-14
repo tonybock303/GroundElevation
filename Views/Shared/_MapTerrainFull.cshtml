@@ -44,14 +44,16 @@
     var numUp = (totalDistance * 1000);
     var it = 14 / numUp;
     var zoom = 15;
-    var originLng1 = startLng + 0.01;
-    var originLat1 = startLat + 0.01;
-    var originLng2 = finishLng - 0.01;
-    var originLat2 = finishLat + 0.01;
-    var originLng3 = finishLng - 0.01;
-    var originLat3 = finishLat - 0.01;
-    var originLng4 = startLng + 0.01;
-    var originLat4 = startLat - 0.01;
+
+    var flyDis = 0.003;
+    var originLng1 = startLng - flyDis;
+    var originLat1 = startLat + flyDis;
+    var originLng2 = startLng + flyDis;
+    var originLat2 = startLat + flyDis;
+    var originLng3 = finishLng + flyDis;
+    var originLat3 = finishLat - flyDis;
+    var originLng4 = finishLng - flyDis;
+    var originLat4 = finishLat - flyDis;
 
     var midBearing = 50;
 
@@ -77,6 +79,7 @@
             zoom: zoom,
             pitch: 65,
             bearing: @midBearing,
+            maxTileCacheSize: 10000
         });
 
         //50.758736732846785, -1.983127781139956	50.77809984376799, -1.977283557031626
@@ -86,12 +89,12 @@
             map.addSource('mapbox-dem', {
                 'type': 'raster-dem',
                 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-                'tileSize':8,
-                'maxzoom': 12
+                'tileSize':16,
+                'maxzoom': 14
             });
 
             // add the DEM source as a terrain layer with exaggerated height
-            //map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': @exagerexaggeration });
+            map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': @exagerexaggeration });
 
             // add a sky layer that will show when the map is highly pitched
             map.addLayer({
@@ -120,18 +123,7 @@
         scale.setUnit('metric');
         map.addControl(new mapboxgl.FullscreenControl({ container: document.querySelector('map') }));
         map.boxZoom.enable();
-        @*map.on('click', function () {
-            console.log("clicked, stopping rotation");
-            map.flyTo({
-                center: [@midLng, @midLat],
-                zoom: zoom,
-                speed: 0.4,
-                curve: 1,
-                easing(t) {
-                    return t;
-                }
-            });
-        });*@
+
 
 
                 var startMarker = new mapboxgl.Marker({
@@ -147,7 +139,7 @@
             })
                 .setLngLat([@finishLng, @finishLat])
             .addTo(map);
-        ///hjkchkffh
+
 
 
         function updateCameraPosition(position, altitude, target) {
@@ -178,14 +170,14 @@
                     return a * (1.0 - t) + b * t;
                 }
             };
-
+            var speed = 5;
             var animations = [
                 {
-                    duration: 1.0,
+                    duration: speed,
                     animate: function (phase) {
                         var start = [@originLng1, @originLat1];
                         var end = [@originLng2, @originLat2];
-                        var alt = [800.0, 800.0];
+                        var alt = [300.0, 600.0];
 
                         // interpolate camera position while keeping focus on a target lat/lng
                         var position = lerp(start, end, phase);
@@ -196,11 +188,11 @@
                     }
                 },
                 {
-                    duration: 1.0,
+                    duration: speed*2,
                     animate: function (phase) {
                         var start = [@originLng2, @originLat2];
                         var end = [@originLng3, @originLat3];
-                        var alt = [800.0, 800.0];
+                        var alt = [600.0, 150.0];
                         var target1 = [@startLng, @startLat];
                         var target2 = [@finishLng, @finishLat];
 
@@ -213,7 +205,7 @@
                     }
                 },
                 {
-                    duration: 1.0,
+                    duration: speed,
                     animate: function (phase) {
                         // create easing function for the animation
                         var easeInOutQuad = function (t) {
@@ -223,7 +215,7 @@
                         };
                         var start = [@originLng3, @originLat3];
                         var end = [@originLng4, @originLat4];
-                        var alt = [800.0, 800.0];
+                        var alt = [150.0, 200.0];
                         var target1 = [@finishLng, @finishLat];
                         var target2 = [@midLng, @midLat];
 
@@ -237,7 +229,7 @@
 
                 },
                 {
-                    duration: 1.0,
+                    duration: speed*2,
                     animate: function (phase) {
                         // create easing function for the animation
                         var easeInOutQuad = function (t) {
@@ -247,9 +239,9 @@
                         };
                         var start = [@originLng4, @originLat4];
                         var end = [@originLng1, @originLat1];
-                        var alt = [800.0, 800.0];
+                        var alt = [200.0, 300.0];
                         var target1 = [@midLng, @midLat];
-                        var target2 = [@finishLng, @finishLat];
+                        var target2 = [@startLng, @startLat];
 
                         // interpolate both the camera position and target
                         var position = lerp(start, end, easeInOutQuad(phase));
