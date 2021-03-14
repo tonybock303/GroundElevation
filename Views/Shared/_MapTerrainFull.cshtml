@@ -46,16 +46,16 @@
     var zoom = 15;
 
     var flyDis = 0.003;
-    var originLng1 = startLng - flyDis;
-    var originLat1 = startLat + flyDis;
+    var originLng1 = startLng + flyDis;
+    var originLat1 = startLat - flyDis;
     var originLng2 = startLng + flyDis;
     var originLat2 = startLat + flyDis;
-    var originLng3 = finishLng + flyDis;
-    var originLat3 = finishLat - flyDis;
+    var originLng3 = finishLng - flyDis;
+    var originLat3 = finishLat + flyDis;
     var originLng4 = finishLng - flyDis;
     var originLat4 = finishLat - flyDis;
 
-    var midBearing = 50;
+    var midBearing = 0;
 
 
     var scaler = 0.01;
@@ -64,6 +64,7 @@
     var latBound2 = midLat + scaler;
     var lngBound2 = midLng - scaler;
     var exagerexaggeration = 3;
+    var tileSize = 512;
 
 }
 <script>
@@ -79,7 +80,7 @@
             zoom: zoom,
             pitch: 65,
             bearing: @midBearing,
-            maxTileCacheSize: 10000
+            maxTileCacheSize: 100000
         });
 
         //50.758736732846785, -1.983127781139956	50.77809984376799, -1.977283557031626
@@ -89,7 +90,7 @@
             map.addSource('mapbox-dem', {
                 'type': 'raster-dem',
                 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
-                'tileSize':16,
+                'tileSize':@tileSize,
                 'maxzoom': 14
             });
 
@@ -170,14 +171,16 @@
                     return a * (1.0 - t) + b * t;
                 }
             };
-            var speed = 5;
+            var speed = 20;
+            
+            var groundHeightOffset = -100;// - @Model.;
             var animations = [
                 {
                     duration: speed,
                     animate: function (phase) {
                         var start = [@originLng1, @originLat1];
                         var end = [@originLng2, @originLat2];
-                        var alt = [300.0, 600.0];
+                        var alt = [300.0 + groundHeightOffset, 400.0 + groundHeightOffset];
 
                         // interpolate camera position while keeping focus on a target lat/lng
                         var position = lerp(start, end, phase);
@@ -188,11 +191,11 @@
                     }
                 },
                 {
-                    duration: speed*2,
+                    duration: speed*6,
                     animate: function (phase) {
                         var start = [@originLng2, @originLat2];
                         var end = [@originLng3, @originLat3];
-                        var alt = [600.0, 150.0];
+                        var alt = [400.0 + groundHeightOffset, 400.0 + groundHeightOffset];
                         var target1 = [@startLng, @startLat];
                         var target2 = [@finishLng, @finishLat];
 
@@ -215,9 +218,9 @@
                         };
                         var start = [@originLng3, @originLat3];
                         var end = [@originLng4, @originLat4];
-                        var alt = [150.0, 200.0];
+                        var alt = [400.0 + groundHeightOffset, 450.0 + groundHeightOffset];
                         var target1 = [@finishLng, @finishLat];
-                        var target2 = [@midLng, @midLat];
+                        var target2 = [@finishLng, @finishLat];
 
                         // interpolate both the camera position and target
                         var position = lerp(start, end, easeInOutQuad(phase));
@@ -229,7 +232,7 @@
 
                 },
                 {
-                    duration: speed*2,
+                    duration: speed*3,
                     animate: function (phase) {
                         // create easing function for the animation
                         var easeInOutQuad = function (t) {
@@ -239,8 +242,8 @@
                         };
                         var start = [@originLng4, @originLat4];
                         var end = [@originLng1, @originLat1];
-                        var alt = [200.0, 300.0];
-                        var target1 = [@midLng, @midLat];
+                        var alt = [450.0 + groundHeightOffset, 300.0 + groundHeightOffset];
+                        var target1 = [@finishLng, @finishLat];
                         var target2 = [@startLng, @startLat];
 
                         // interpolate both the camera position and target

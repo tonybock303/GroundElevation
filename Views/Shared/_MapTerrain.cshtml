@@ -44,12 +44,12 @@
     var midLat = Model.MidCoordLat;
     var totalDistance = Model.TotalDistance;
     var numUp = (totalDistance * 1000);
-    var zoom = numUp * 0.69;
+    var zoom = numUp * 0.84;
     var originLng = startLng;
     var originLat = startLat;
     var midBearing = 50;
 
-    var scaler = 0.01;
+    var scaler = 0.003;
     var latBound1 = midLat - scaler;
     var lngBound1 = midLng - scaler;
     var latBound2 = midLat + scaler;

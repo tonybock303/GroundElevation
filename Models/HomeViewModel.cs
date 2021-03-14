@@ -27,13 +27,13 @@ namespace GroundElevation.Models
         [NotMapped]
         public List<Result> Results { get; set; }
         [NotMapped]
-        public double TotalDistance { get { return Math.Sqrt(Math.Pow(FinishCoordsLat - StartCoordsLat, 2) + Math.Pow(FinishCoordsLng - StartCoordsLng, 2)); } }
+        public double TotalDistance { get { return Math.Sqrt(Math.Pow(FinishCoordsLat - StartCoordsLat, 2) + Math.Pow(FinishCoordsLng - StartCoordsLng, 2)) * kmInDegree * feetInMeter; } }
         [NotMapped]
         public double MidCoordLat
         {
             get
             {
-                return (FinishCoordsLat + StartCoordsLat) / 2;
+                return StartCoordsLat + (TotalDistance /2) / TotalDistance * (FinishCoordsLat - StartCoordsLat);
             }
         }
         [NotMapped]
@@ -41,7 +41,7 @@ namespace GroundElevation.Models
         {
             get
             {
-                return (FinishCoordsLng + StartCoordsLng) / 2;
+                return StartCoordsLng + (TotalDistance / 2) / TotalDistance * (FinishCoordsLng - StartCoordsLng);
             }
         }
     }
