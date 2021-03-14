@@ -189,6 +189,8 @@
     <Content Include="Views\Home\Display.cshtml" />
     <Content Include="Views\Shared\_Map.cshtml" />
     <Content Include="Views\Shared\_MapTerrain.cshtml" />
+    <Content Include="Views\Shared\_MapTerrainFull.cshtml" />
+    <Content Include="Views\Home\FullScreen.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="APIControllers\" />

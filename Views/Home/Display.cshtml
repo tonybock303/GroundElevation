@@ -29,60 +29,70 @@
     var finishLat = Model.FinishCoordsLat;
     var midLng = Model.MidCoordLng;
     var midLat = Model.MidCoordLat;
- 
+
     var zoom = 14;
 
     string url = "https://api.mapbox.com/styles/v1/mapbox/light-v10/static/pin-s-l+000(" + startLng + "," + startLat + "),pin-s-l+000(" + finishLng + "," + finishLat + ")/" + midLng + "," + midLat + "," + zoom + "/1150x600?access_token=pk.eyJ1IjoidGhlcGhvZW5peDI1IiwiYSI6ImNrbTR6M3h0bzA5ZXgyeGtuY2ZnMjB6cnoifQ.lvIzFpjHc1uKMGWWywoUNA";
     var results = Model.Results;
+    ViewBag.FULLTERRAINMODEL = Model;
 }
 
+
 @Html.Partial("_MapTerrain")
-<div id="chart_container">
-    <canvas id="line_chart"></canvas>
-</div>
+@using (Html.BeginForm("FullScreen", "Home", FormMethod.Post))
+{
+    @Html.HiddenFor(model => model.Id)
+        @Html.HiddenFor(model => model.StartCoords, new { htmlAttributes = new { @class = "form-control textBox" } })
+        @Html.HiddenFor(model => model.FinishCoords, new { htmlAttributes = new { @class = "form-control textBox" } })
+        <input id="FullScreenButton" type="submit" value="Full Screen" class="form-control" width="300" />
+        }
+
+        <div id="chart_container">
+            <canvas id="line_chart"></canvas>
+        </div>
 
 
-<img src="@url">
-<p>
-    @Html.ActionLink("Create New", "Create")
-</p>
-<table class="table">
-    <tr>
-        <th>
-            Lng
-        </th>
-        <th>
-            Elevation
-        </th>
-        <th>
-            Lat
-        </th>
-        <th></th>
-    </tr>
+        <img src="@url">
+        <p>
+            @Html.ActionLink("Create New", "Create")
+        </p>
+        <table class="table">
+            <tr>
+                <th>
+                    Lng
+                </th>
+                <th>
+                    Elevation
+                </th>
+                <th>
+                    Lat
+                </th>
+                <th></th>
+            </tr>
 
-    @foreach (var item in Model.Results)
-    {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.location.lng)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.elevation)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.location.lat)
-            </td>
-            <td>
-                @Html.ActionLink("Edit", "Edit", new { id = item.id }) |
-                @Html.ActionLink("Details", "Details", new { id = item.id }) |
-                @Html.ActionLink("Delete", "Delete", new { id = item.id })
-            </td>
-        </tr>
-    }
+            @foreach (var item in Model.Results)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.location.lng)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.elevation)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.location.lat)
+                    </td>
+                    <td>
+                        @Html.ActionLink("Edit", "Edit", new { id = item.id }) |
+                        @Html.ActionLink("Details", "Details", new { id = item.id }) |
+                        @Html.ActionLink("Delete", "Delete", new { id = item.id })
+                    </td>
+                </tr>
+            }
 
-</table>
+        </table>
 
-<script>
+        <script>
     $(document).ready(function () {
         var elevations = @Html.Raw(Json.Encode(Model.Results.Select(x => x.elevation).ToArray()));
         var intervals = @Html.Raw(Json.Encode(ViewBag.Intervals));
@@ -235,5 +245,5 @@
             }
         });
     });
-</script>
+        </script>
 

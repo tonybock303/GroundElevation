@@ -49,8 +49,7 @@
     var originLat = startLat;
     var midBearing = 50;
 
-
-    var scaler = 0.005;
+    var scaler = 0.01;
     var latBound1 = midLat - scaler;
     var lngBound1 = midLng - scaler;
     var latBound2 = midLat + scaler;
@@ -60,8 +59,6 @@
 }
 <script>
     $(document).ready(function () {
-
-        var loadedCount = 0;
         mapboxgl.accessToken = 'pk.eyJ1IjoidGhlcGhvZW5peDI1IiwiYSI6ImNrbTR6M3h0bzA5ZXgyeGtuY2ZnMjB6cnoifQ.lvIzFpjHc1uKMGWWywoUNA';
         var zoom = @zoom;
         var map = new mapboxgl.Map({
@@ -79,7 +76,7 @@
 
         //50.758736732846785, -1.983127781139956	50.77809984376799, -1.977283557031626
 
-
+        var loadedCount = 0;
         map.on('load', function () {
             map.addSource('mapbox-dem', {
                 'type': 'raster-dem',
@@ -162,47 +159,37 @@
                 console.log("moveend - start rotating - bearing = " + map.getBearing());
                 @*if (map.getBearing() != @midBearing) {
 
-                    map.rotateTo(@midBearing)
+            map.rotateTo(@midBearing)
 
                 }*@
-                rotating = true;
-                // Start the animation.
-                rotateCamera(0);
+    rotating = true;
+    // Start the animation.
+    rotateCamera(0);
 
-                $('.mapContainer').show();
-                map.resize();
+    $('.mapContainer').show();
+    map.resize();
             }
         });
-        loaded = false;
-        var loaded = false;
-        map.on('sourcedata', function (e) {
-            if (e.isSourceLoaded) {
-                //console.log("isloaded");
-                if (!loaded) {
-                    console.log("isloaded");
-                    loadedCount = loadedCount + 1;
-                    if (loadedCount > 1) {
-                        loaded = true;
-                        rotating = false;
-                        rotateCamera(0);
-                        @*// Fly to location
-                        map.flyTo({
-                            center: [@midLng, @midLat],
-                            zoom: zoom,
-                            speed: 0.5,
-                            curve: 2,
-                            easing(t) {
-                                return t;
-                            }
-                        })*@
+    loaded = false;
+    var loaded = false;
+    map.on('sourcedata', function (e) {
+        if (e.isSourceLoaded) {
+            //console.log("isloaded");
+            if (!loaded) {
+                console.log("isloaded");
+                loadedCount = loadedCount + 1;
+                if (loadedCount > 1) {
+                    loaded = true;
+                    rotating = false;
+                    rotateCamera(0);                   
                     }
                 }
             }
         });
 
                 var startMarker = new mapboxgl.Marker({
-                color: "#00FF00",
-                draggable: true
+                    color: "#00FF00",
+                    draggable: true
             })
                 .setLngLat([@startLng, @startLat])
                 .addTo(map);

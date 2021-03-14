@@ -1,0 +1,290 @@
+﻿@model GroundElevation.Models.HomeViewModel
+
+
+<head>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js"></script>
+    <script src="~/Scripts/jquery-3.4.1.js"></script>
+    <style>
+
+        #map {
+            border: 1px solid #ddd;
+            padding: 1px;
+            border-radius: 4px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .mapContainer {
+            height: 100%;
+            width: 100%;
+            
+        }
+
+        .holdingContainer {
+            height: 700px;
+            width: 100%;
+        }
+    </style>
+</head>
+<br />
+<div class="holdingContainer">
+    <div class="mapContainer">
+        <div id="map" class="row"></div>
+    </div>
+</div>
+@{
+    var startLng = Model.StartCoordsLng;
+    var startLat = Model.StartCoordsLat;
+    var finishLng = Model.FinishCoordsLng;
+    var finishLat = Model.FinishCoordsLat;
+    var midLng = Model.MidCoordLng;
+    var midLat = Model.MidCoordLat;
+    var totalDistance = Model.TotalDistance;
+    var numUp = (totalDistance * 1000);
+    var it = 14 / numUp;
+    var zoom = 15;
+    var originLng1 = startLng + 0.01;
+    var originLat1 = startLat + 0.01;
+    var originLng2 = finishLng - 0.01;
+    var originLat2 = finishLat + 0.01;
+    var originLng3 = finishLng - 0.01;
+    var originLat3 = finishLat - 0.01;
+    var originLng4 = startLng + 0.01;
+    var originLat4 = startLat - 0.01;
+
+    var midBearing = 50;
+
+
+    var scaler = 0.01;
+    var latBound1 = midLat - scaler;
+    var lngBound1 = midLng + scaler;
+    var latBound2 = midLat + scaler;
+    var lngBound2 = midLng - scaler;
+    var exagerexaggeration = 3;
+
+}
+<script>
+    $(document).ready(function () {
+
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoidGhlcGhvZW5peDI1IiwiYSI6ImNrbTR6M3h0bzA5ZXgyeGtuY2ZnMjB6cnoifQ.lvIzFpjHc1uKMGWWywoUNA';
+        var zoom = @zoom;
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/thephoenix25/ckm7lc2nj4ibd17q3tltlvz47',
+            center: [@originLng1, @originLat1],
+            zoom: zoom,
+            pitch: 65,
+            bearing: @midBearing,
+        });
+
+        //50.758736732846785, -1.983127781139956	50.77809984376799, -1.977283557031626
+
+
+        map.on('load', function () {
+            map.addSource('mapbox-dem', {
+                'type': 'raster-dem',
+                'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                'tileSize':8,
+                'maxzoom': 12
+            });
+
+            // add the DEM source as a terrain layer with exaggerated height
+            //map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': @exagerexaggeration });
+
+            // add a sky layer that will show when the map is highly pitched
+            map.addLayer({
+                'id': 'sky',
+                'type': 'sky',
+                'paint': {
+                    'sky-type': 'atmosphere',
+                    'sky-atmosphere-sun': [0.0, 0.0],
+                    'sky-atmosphere-sun-intensity': 15
+                }
+            });
+
+        });
+        map.addControl(new mapboxgl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true
+            },
+            trackUserLocation: true
+        }));
+        var scale = new mapboxgl.ScaleControl({
+            maxWidth: 80,
+            unit: 'imperial'
+        });
+        map.addControl(scale);
+
+        scale.setUnit('metric');
+        map.addControl(new mapboxgl.FullscreenControl({ container: document.querySelector('map') }));
+        map.boxZoom.enable();
+        @*map.on('click', function () {
+            console.log("clicked, stopping rotation");
+            map.flyTo({
+                center: [@midLng, @midLat],
+                zoom: zoom,
+                speed: 0.4,
+                curve: 1,
+                easing(t) {
+                    return t;
+                }
+            });
+        });*@
+
+
+                var startMarker = new mapboxgl.Marker({
+                color: "#00FF00",
+                draggable: true
+            })
+                .setLngLat([@startLng, @startLat])
+                .addTo(map);
+
+            var finishMarker = new mapboxgl.Marker({
+                color: "#FF0000",
+                draggable: true
+            })
+                .setLngLat([@finishLng, @finishLat])
+            .addTo(map);
+        ///hjkchkffh
+
+
+        function updateCameraPosition(position, altitude, target) {
+            var camera = map.getFreeCameraOptions();
+
+            camera.position = mapboxgl.MercatorCoordinate.fromLngLat(
+                position,
+                altitude
+            );
+            camera.lookAtPoint(target);
+
+            map.setFreeCameraOptions(camera);
+        }
+
+        var animationIndex = 0;
+        var animationTime = 0.0;
+
+        // wait for the terrain and sky to load before starting animations
+        map.on('idle', function () {
+            // linearly interpolate between two altitudes/positions based on time
+            var lerp = function (a, b, t) {
+                if (Array.isArray(a) && Array.isArray(b)) {
+                    var result = [];
+                    for (var i = 0; i < Math.min(a.length, b.length); i++)
+                        result[i] = a[i] * (1.0 - t) + b[i] * t;
+                    return result;
+                } else {
+                    return a * (1.0 - t) + b * t;
+                }
+            };
+
+            var animations = [
+                {
+                    duration: 1.0,
+                    animate: function (phase) {
+                        var start = [@originLng1, @originLat1];
+                        var end = [@originLng2, @originLat2];
+                        var alt = [800.0, 800.0];
+
+                        // interpolate camera position while keeping focus on a target lat/lng
+                        var position = lerp(start, end, phase);
+                        var altitude = lerp(alt[0], alt[1], phase);
+                        var target = [@startLng, @startLat];
+
+                        updateCameraPosition(position, altitude, target);
+                    }
+                },
+                {
+                    duration: 1.0,
+                    animate: function (phase) {
+                        var start = [@originLng2, @originLat2];
+                        var end = [@originLng3, @originLat3];
+                        var alt = [800.0, 800.0];
+                        var target1 = [@startLng, @startLat];
+                        var target2 = [@finishLng, @finishLat];
+
+                        // interpolate both the camera position and target
+                        var position = lerp(start, end, phase);
+                        var altitude = lerp(alt[0], alt[1], phase);
+                        var target = lerp(target1, target2, phase);
+
+                        updateCameraPosition(position, altitude, target);
+                    }
+                },
+                {
+                    duration: 1.0,
+                    animate: function (phase) {
+                        // create easing function for the animation
+                        var easeInOutQuad = function (t) {
+                            return t < 0.5
+                                ? 2.0 * t * t
+                                : (4.0 - 2.0 * t) * t - 1.0;
+                        };
+                        var start = [@originLng3, @originLat3];
+                        var end = [@originLng4, @originLat4];
+                        var alt = [800.0, 800.0];
+                        var target1 = [@finishLng, @finishLat];
+                        var target2 = [@midLng, @midLat];
+
+                        // interpolate both the camera position and target
+                        var position = lerp(start, end, easeInOutQuad(phase));
+                        var altitude = lerp(alt[0], alt[1], phase);
+                        var target = lerp(target1, target2, phase);
+
+                        updateCameraPosition(position, altitude, target);
+                    }
+
+                },
+                {
+                    duration: 1.0,
+                    animate: function (phase) {
+                        // create easing function for the animation
+                        var easeInOutQuad = function (t) {
+                            return t < 0.5
+                                ? 2.0 * t * t
+                                : (4.0 - 2.0 * t) * t - 1.0;
+                        };
+                        var start = [@originLng4, @originLat4];
+                        var end = [@originLng1, @originLat1];
+                        var alt = [800.0, 800.0];
+                        var target1 = [@midLng, @midLat];
+                        var target2 = [@finishLng, @finishLat];
+
+                        // interpolate both the camera position and target
+                        var position = lerp(start, end, easeInOutQuad(phase));
+                        var altitude = lerp(alt[0], alt[1], phase);
+                        var target = lerp(target1, target2, phase);
+
+                        updateCameraPosition(position, altitude, target);
+                    }
+
+                }
+            ];
+
+            var lastTime = 0.0;
+            function frame(time) {
+                animationIndex %= animations.length;
+                var current = animations[animationIndex];
+
+                if (animationTime < current.duration) {
+                    current.animate(animationTime / current.duration);
+                }
+
+                // allow requestAnimationFrame to control the speed of the animation
+                animationTime += 1 / (time - lastTime);
+                lastTime = time;
+
+                if (animationTime > current.duration) {
+                    animationIndex++;
+                    animationTime = 0.0;
+                }
+
+                window.requestAnimationFrame(frame);
+            }
+
+            window.requestAnimationFrame(frame);
+        });
+
+    });
+</script>

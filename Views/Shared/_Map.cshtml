@@ -50,7 +50,13 @@
     var midLat = Model.MidCoordLat;
     var totalDistance = Model.TotalDistance;
     var numUp = (totalDistance * 1000);
-    var zoom =  numUp * 0.75;
+    var zoom =  numUp * 0.5;
+
+    var scaler = 0.01;
+    var latBound1 = midLat - scaler;
+    var lngBound1 = midLng - scaler;
+    var latBound2 = midLat + scaler;
+    var lngBound2 = midLng + scaler;
 }
 
 <script>
@@ -63,6 +69,7 @@
                 style: 'mapbox://styles/mapbox/streets-v11',
                 center: [@midLng, @midLat], // starting position
                 zoom: 15 // starting zoom
+
             });*@
 
 
@@ -72,7 +79,11 @@
                 center: [@midLng, @midLat],
                 pitch: 45,
                 bearing: 80,
-                style: 'mapbox://styles/mapbox/outdoors-v11'
+                style: 'mapbox://styles/mapbox/outdoors-v11',
+                bounds : [
+            [@lngBound1, @latBound1], // [west, south]
+            [@lngBound2, @latBound2]  // [east, north]
+        ]
             });
             map.on('load', function () {
                 map.addSource('mapbox-dem', {
@@ -96,7 +107,20 @@
                 });
             });
 
+        map.addControl(new mapboxgl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: true
+            },
+            trackUserLocation: true
+        }));
+        var scale = new mapboxgl.ScaleControl({
+            maxWidth: 80,
+            unit: 'imperial'
+        });
+        map.addControl(scale);
 
+        scale.setUnit('metric');
+        map.boxZoom.enable();
 
             var startMarker = new mapboxgl.Marker({
                 color: "#00FF00",
@@ -113,7 +137,7 @@
                 .addTo(map);
 
             var startCoords = document.getElementById('StartCoords');
-            var finishCoords = document.getElementById('FinishCmidLatords');
+            var finishCoords = document.getElementById('FinishCoords');
 
             function onStartDragEnd() {
                 var lngLat = startMarker.getLngLat();

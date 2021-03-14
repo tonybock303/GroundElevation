@@ -217,5 +217,15 @@ namespace GroundElevation.Controllers
         {
             return RedirectToAction("Index", "Home");
         }
+        [HttpPost]
+        public ActionResult FullScreen(HomeViewModel model)
+        {
+            if (model == null)
+            {
+                return RedirectToAction("Index", "Home"); 
+
+            }
+            return View(model);
+        }
     }
 }
