@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Web;
 
-namespace GroundElevation.Models
+namespace Flythrough.Models
 {
     public class dbLocation
     {

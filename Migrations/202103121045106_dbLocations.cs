@@ -1,4 +1,4 @@
-namespace GroundElevation.Migrations
+namespace Flythrough.Migrations
 {
     using System;
     using System.Data.Entity.Migrations;

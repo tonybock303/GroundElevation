@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Web;
 
-namespace GroundElevation.Models
+namespace Flythrough.Models
 {
     public class HomeViewModel
     {
@@ -13,7 +13,7 @@ namespace GroundElevation.Models
         public int Id { get; set; }
         public string StartCoords { get; set; }
         public string FinishCoords { get; set; }
-        public int GroundClearanceRequired { get; set; }
+        public int GroundClearanceRequired { get; set; } = 100;
         public int OstacleDistance { get; set; }
         public int ObstacleHeight { get; set; }
         [NotMapped]

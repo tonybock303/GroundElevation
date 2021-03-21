@@ -1,19 +1,19 @@
-namespace GroundElevation.Migrations
+namespace Flythrough.Migrations
 {
     using System;
     using System.Data.Entity;
     using System.Data.Entity.Migrations;
     using System.Linq;
 
-    internal sealed class Configuration : DbMigrationsConfiguration<GroundElevation.Data.GroundElevationContext>
+    internal sealed class Configuration : DbMigrationsConfiguration<Flythrough.Data.FlythroughContext>
     {
         public Configuration()
         {
             AutomaticMigrationsEnabled = false;
-            ContextKey = "GroundElevation.Data.GroundElevationContext";
+            ContextKey = "Flythrough.Data.FlythroughContext";
         }
 
-        protected override void Seed(GroundElevation.Data.GroundElevationContext context)
+        protected override void Seed(Flythrough.Data.FlythroughContext context)
         {
             //  This method will be called after migrating to the latest version.
 

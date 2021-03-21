@@ -5,9 +5,9 @@ using System.Web;
 
 namespace Flythrough.Models
 {
-    public class Location
+    public class FlythroughModel
     {
-        public double lat { get; set; }
-        public double lng { get; set; }
+        public List<CameraModel> Cameras { get; set; } = new List<CameraModel>();
+        
     }
 }

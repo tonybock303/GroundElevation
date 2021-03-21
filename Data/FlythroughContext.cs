@@ -4,9 +4,9 @@ using System.Data.Entity;
 using System.Linq;
 using System.Web;
 
-namespace GroundElevation.Data
+namespace Flythrough.Data
 {
-    public class GroundElevationContext : DbContext
+    public class FlythroughContext : DbContext
     {
         // You can add custom code to this file. Changes will not be overwritten.
         // 
@@ -15,12 +15,12 @@ namespace GroundElevation.Data
         // For more information refer to the documentation:
         // http://msdn.microsoft.com/en-us/data/jj591621.aspx
     
-        public GroundElevationContext() : base("name=GroundElevationContext")
+        public FlythroughContext() : base("name=FlythroughContext")
         {
         }
 
-        public System.Data.Entity.DbSet<GroundElevation.Models.dbLocation> dbLocations { get; set; }
+        public System.Data.Entity.DbSet<Flythrough.Models.dbLocation> dbLocations { get; set; }
 
-        public System.Data.Entity.DbSet<GroundElevation.Models.HomeViewModel> HomeViewModels { get; set; }
+        public System.Data.Entity.DbSet<Flythrough.Models.HomeViewModel> HomeViewModels { get; set; }
     }
 }

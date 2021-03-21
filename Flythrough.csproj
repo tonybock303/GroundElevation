@@ -130,7 +130,7 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\HomeController.cs" />
-    <Compile Include="Data\GroundElevationContext.cs" />
+    <Compile Include="Data\FlythroughContext.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -139,11 +139,15 @@
       <DependentUpon>202103121045106_dbLocations.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Models\CameraModel.cs" />
+    <Compile Include="Models\FlythroughModel.cs" />
     <Compile Include="Models\HomeViewModel.cs" />
     <Compile Include="Models\Location.cs" />
     <Compile Include="Models\dbLocation.cs" />
     <Compile Include="Models\Result.cs" />
     <Compile Include="Models\Root.cs" />
+    <Compile Include="Models\TargetModel.cs" />
+    <Compile Include="Models\WaypointGenerator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -185,12 +189,14 @@
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
-    <Content Include="Views\Home\Index.cshtml" />
+    <Content Include="Views\Home\WayPoints.cshtml" />
     <Content Include="Views\Home\Display.cshtml" />
     <Content Include="Views\Shared\_Map.cshtml" />
     <Content Include="Views\Shared\_MapTerrain.cshtml" />
     <Content Include="Views\Shared\_MapTerrainFull.cshtml" />
     <Content Include="Views\Home\FullScreen.cshtml" />
+    <Content Include="Views\Shared\_MapTerrainFull - Copy.cshtml" />
+    <Content Include="Views\Shared\_MapTerrainFull - Copy %282%29.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="APIControllers\" />

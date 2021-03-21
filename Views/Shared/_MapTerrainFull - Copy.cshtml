@@ -1,0 +1,242 @@
+﻿@model Flythrough.Models.FlythroughModel
+@using Flythrough.Models
+
+<head>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js"></script>
+    <script src="~/Scripts/jquery-3.4.1.js"></script>
+    <style>
+
+        #map {
+            border: 1px solid #ddd;
+            padding: 1px;
+            border-radius: 4px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .mapContainer {
+            height: 100%;
+            width: 100%;
+        }
+
+        .holdingContainer {
+            height: 500px;
+            width: 800px;
+        }
+    </style>
+</head>
+<br />
+<div class="holdingContainer">
+    <div class="mapContainer">
+        <div id="map" class="row"></div>
+    </div>
+</div>
+@{
+    List<double> cLng = new List<double>();
+    List<double> cLat = new List<double>();
+    List<double> tLng = new List<double>();
+    List<double> tLat = new List<double>();
+    for (int i = 0; i < Model.Cameras.Count(); i++)
+    {
+
+        double[] clnglat = Model.Cameras.OrderBy(x => x.Id).ElementAt(i).GetCameraLngLat();
+        cLng.Add(clnglat[0]);
+        cLat.Add(clnglat[1]);
+
+        double[] tlnglat = Model.Cameras.OrderBy(x => x.Id).ElementAt(i).GetTargetLngLat();
+        tLng.Add(tlnglat[0]);
+        tLat.Add(tlnglat[1]);
+    }
+    var cameraLng = cLng.ToArray();
+    var cameraLat = cLat.ToArray();
+    var targetLng = tLng.ToArray();
+    var targetLat = tLat.ToArray();
+    WaypointGenerator wg = new WaypointGenerator();
+    string waypointResult = wg.GetWaypoints(Model.Cameras);
+
+    //var cameraStart = Model.Cameras.Select(x => x.GetCameraLngLat()).ToArray();
+
+    var startLng = cameraLng[0];
+    var startLat = cameraLat[0]; ;
+    //var startTargetLng = Model.First().TargetLng;
+    //var startTargetLat = Model.First().TargetLat;
+
+
+
+    var zoom = 15;
+
+    var midBearing = 0;
+
+
+
+    var exagerexaggeration = 2.5;
+    var tileSize = 128;
+
+}
+<script>
+    $(document).ready(function () {
+        @{ string testval = "console." + "log('" + "test');";}
+        @Html.Raw(testval)
+        mapboxgl.accessToken = 'pk.eyJ1IjoidGhlcGhvZW5peDI1IiwiYSI6ImNrbTR6M3h0bzA5ZXgyeGtuY2ZnMjB6cnoifQ.lvIzFpjHc1uKMGWWywoUNA';
+        var zoom = @zoom;
+         var map = new mapboxgl.Map({
+            container: 'map',
+            zoom: 11.53,
+            center: [@startLng, @startLat],
+            pitch: 76,
+            bearing: -177.2,
+            style: 'mapbox://styles/mapbox/satellite-v9',
+            interactive: false
+        });
+
+        // add terrain and sky layers once the style has loaded
+        map.on('load', function () {
+            map.addSource('mapbox-dem', {
+                'type': 'raster-dem',
+                'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                'tileSize': 512,
+                'maxzoom': 14
+            });
+            map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+
+            map.addLayer({
+                'id': 'sky',
+                'type': 'sky',
+                'paint': {
+                    'sky-type': 'atmosphere',
+                    'sky-atmosphere-sun': [0.0, 90.0],
+                    'sky-atmosphere-sun-intensity': 15
+                }
+            });
+        });
+
+        function updateCameraPosition(position, altitude, target) {
+            var camera = map.getFreeCameraOptions();
+
+            camera.position = mapboxgl.MercatorCoordinate.fromLngLat(
+                position,
+                altitude
+            );
+            camera.lookAtPoint(target);
+
+            map.setFreeCameraOptions(camera);
+        }
+
+        var animationIndex = 0;
+        var animationTime = 0.0;
+        var dur = 200;
+        var flightHeight = 800;
+        animations = [];
+
+        var cameraLng = @Html.Raw(Json.Encode(cameraLng));
+        var cameraLat = @Html.Raw(Json.Encode(cameraLat));
+        var targetLng = @Html.Raw(Json.Encode(targetLng));
+        var targetLat = @Html.Raw(Json.Encode(targetLat));
+        var lastIndex = @Model.Cameras.Count()-1;
+
+
+        // wait for the terrain and sky to load before starting animations
+        map.on('idle', function () {
+
+            // linearly interpolate between two altitudes/positions based on time
+            var lerp = function (a, b, t) {
+                if (Array.isArray(a) && Array.isArray(b)) {
+                    var result = [];
+                    for (var i = 0; i < Math.min(a.length, b.length); i++)
+                        result[i] = a[i] * (1.0 - t) + b[i] * t;
+                    return result;
+                } else {
+                    return a * (1.0 - t) + b * t;
+                }
+            };
+
+            console.log("first 0 = camera lnglat " + cameraLng[0] + "," + cameraLat[0] + " - target lnglat " + targetLng[0] + "," + targetLat[0]);
+            animations[0] =
+                {
+                    duration: dur,
+                    animate: function (phase) {
+                        var start = [cameraLng[0], cameraLat[0]];
+                        var end = [cameraLng[1], cameraLat[1]];
+                        var alt = [flightHeight, flightHeight];
+
+                        // interpolate camera position while keeping focus on a target lat/lng
+                        var position = lerp(start, end, phase);
+                        var altitude = lerp(alt[0], alt[1], phase);
+                        var target = [targetLng[0], targetLat[0]];
+
+                        updateCameraPosition(position, altitude, target);
+                    }
+                };
+
+
+            for (var animLoop = 1; animLoop < lastIndex; animLoop++) {
+                console.log("loop " + animLoop + " = camera lnglat " + cameraLng[animLoop] + "," + cameraLat[animLoop] + " - target lnglat " + targetLng[animLoop] + "," + targetLat[animLoop]);
+                animations[animLoop] =
+                {
+                    duration: dur,
+                    animate: function (phase) {
+                        var start = [cameraLng[animLoop - 1], cameraLat[animLoop - 1]];
+                        var end = [cameraLng[animLoop], cameraLat[animLoop]];
+                        var alt = [flightHeight, flightHeight];
+                        var target1 = [targetLng[animLoop - 1], targetLat[animLoop - 1]];
+                        var target2 = [targetLng[animLoop], targetLat[animLoop]];
+
+                        // interpolate both the camera position and target
+                        var position = lerp(start, end, phase);
+                        var altitude = lerp(alt[0], alt[1], phase);
+                        var target = lerp(target1, target2, phase);
+
+                        updateCameraPosition(position, altitude, target);
+                    }
+                };
+            }
+            animations[lastIndex] =
+            {
+                duration: dur,
+                animate: function (phase) {
+                    var start = [cameraLng[lastIndex], cameraLat[lastIndex]];
+                    var end = [cameraLng[0], cameraLat[0]];
+                    var alt = [flightHeight, flightHeight];
+
+                    // interpolate camera position while keeping focus on a target lat/lng
+                    var position = lerp(start, end, phase);
+                    var altitude = lerp(alt[0], alt[1], phase);
+                    var target = [targetLng[lastIndex], targetLat[lastIndex]];
+
+                    updateCameraPosition(position, altitude, target);
+                }
+            };
+
+            console.log("last " + lastIndex + " = camera lnglat " + cameraLng[lastIndex] + "," + cameraLat[lastIndex] + " - target lnglat " + targetLng[lastIndex] + "," + targetLat[lastIndex]);
+
+            var lastTime = 0.0;
+            function frame(time) {
+                animationIndex %= animations.length;
+                var current = animations[animationIndex];
+
+                if (animationTime < current.duration) {
+                    current.animate(animationTime / current.duration);
+                }
+
+                // allow requestAnimationFrame to control the speed of the animation
+                animationTime += 1 / (time - lastTime);
+                lastTime = time;
+
+                if (animationTime > current.duration) {
+
+                    animationIndex++;
+                    animationTime = 0.0;
+                    if (animationIndex == animations.length) {
+                        animationIndex = 0;
+                    }
+                }
+
+                window.requestAnimationFrame(frame);
+            }
+
+            window.requestAnimationFrame(frame);
+        });
+
+    });
+</script>

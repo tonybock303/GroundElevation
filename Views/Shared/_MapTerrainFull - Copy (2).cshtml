@@ -1,0 +1,182 @@
+﻿@model Flythrough.Models.FlythroughModel
+@using Flythrough.Models
+
+<head>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js"></script>
+    <script src="~/Scripts/jquery-3.4.1.js"></script>
+    <style>
+
+        #map {
+            border: 1px solid #ddd;
+            padding: 1px;
+            border-radius: 4px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .mapContainer {
+            height: 100%;
+            width: 100%;
+        }
+
+        .holdingContainer {
+            height: 500px;
+            width: 800px;
+        }
+    </style>
+</head>
+<br />
+<div class="holdingContainer">
+    <div class="mapContainer">
+        <div id="map" class="row"></div>
+    </div>
+</div>
+@{
+    List<double[]> cLngLatList = new List<double[]>();
+    List<double[]> tLngLatList = new List<double[]>();
+
+    for (int i = 0; i < Model.Cameras.Count(); i++)
+    {
+        double[] clnglat = Model.Cameras.OrderBy(x => x.Id).ElementAt(i).GetCameraLngLat();
+        double[] tlnglat = Model.Cameras.OrderBy(x => x.Id).ElementAt(i).GetTargetLngLat();
+
+        cLngLatList.Add(clnglat);
+        tLngLatList.Add(tlnglat);
+    }
+    WaypointGenerator wg = new WaypointGenerator();
+    string waypointResult = wg.GetWaypoints(Model.Cameras);
+
+    var startLngLat = cLngLatList.First();
+    var finishLngLat = cLngLatList.Last();
+
+
+
+}
+<script>
+
+    function GetDistanceTo(lnglat1, lnglat2) {
+        const R = 6371e3; // metres
+        const φ1 = lnglat1[1] * Math.PI / 180; // φ, λ in radians
+        const φ2 = lnglat2[1] * Math.PI / 180;
+        const Δφ = (lnglat2[1] - lnglat1[1]) * Math.PI / 180;
+        const Δλ = (lnglat2[0] - lnglat1[0]) * Math.PI / 180;
+
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // in metres
+    }
+
+    function GetBearingTo(lnglat1, lnglat2) {
+        const y = Math.sin(lnglat2[1] - lnglat1[1]) * Math.cos(lnglat2[0]);
+        const x = Math.cos(lnglat1[0]) * Math.sin(lnglat2[0]) -
+            Math.sin(lnglat1[0]) * Math.cos(lnglat2[0]) * Math.cos(lnglat2[1] - lnglat1[1]);
+        const θ = Math.atan2(y, x);
+        return (θ * 180 / Math.PI + 360) % 360; // in degrees
+    }
+    $(document).ready(function () {
+        mapboxgl.accessToken = 'pk.eyJ1IjoidGhlcGhvZW5peDI1IiwiYSI6ImNrbTR6M3h0bzA5ZXgyeGtuY2ZnMjB6cnoifQ.lvIzFpjHc1uKMGWWywoUNA';
+         var map = new mapboxgl.Map({
+            container: 'map',
+            zoom: 16,
+            center: @Html.Raw(Json.Encode(startLngLat)),
+             bearing: 0,
+             pitch: 75,
+            style: 'mapbox://styles/mapbox/satellite-v9'
+        });
+
+        // add terrain and sky layers once the style has loaded
+        map.on('load', function () {
+            map.addSource('mapbox-dem', {
+                'type': 'raster-dem',
+                'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                'tileSize': 512,
+                'maxzoom': 14
+            });
+            map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+
+            map.addLayer({
+                'id': 'sky',
+                'type': 'sky',
+                'paint': {
+                    'sky-type': 'atmosphere',
+                    'sky-atmosphere-sun': [0.0, 90.0],
+                    'sky-atmosphere-sun-intensity': 15
+                }
+            });
+            function easing(t) {
+                return t * (2 - t);
+            }
+            var coordinates = @Html.Raw(Json.Encode(cLngLatList));
+            var timer = window.setInterval(function () {
+                console.log("map bearing : " + map.getBearing());
+            }, 1000);
+            var i = 1;
+            var maxIndex = coordinates.length - 1;
+            var timer = window.setInterval(function () {
+                if (i < coordinates.length) {
+                    bearing = GetBearingTo(coordinates[i - 1], coordinates[i]) - 240;
+
+                    map.rotateTo({
+                        bearing: bearing,
+                        easing: easing
+                    });
+                }
+                }, 10000);
+            var timer = window.setInterval(function () {
+                
+                if (i < coordinates.length) {
+                    var distance = 0;
+                    var bearing = 0;
+                    if (i > 0) {
+                        distance = GetDistanceTo(coordinates[i - 1], coordinates[i]);
+
+                        bearing = GetBearingTo(coordinates[i - 1], coordinates[i])-240;
+                        console.log(i + " distance to next : " + distance);
+                        console.log(i + " bearing to next : " + bearing);
+                        //console.log(i + " map bearing : " + map.getBearing());
+                        map.panTo(coordinates[i], { duration: 10000 });
+                    }
+                    
+
+                    i++;
+                } else {
+                    window.clearInterval(timer);
+                    i = 0;
+                }
+            }, 10000);
+
+
+
+            //coordinates.forEach(function (lnglat, index) {
+            //    var distance = 0;
+            //    var bearing = 0;
+            //    if (index > 0) {
+            //        distance = GetDistanceTo(coordinates[index - 1], coordinates[index]);
+            //        bearing = GetBearingTo(coordinates[index - 1], coordinates[index]);
+            //        console.log(index + " distance to next : " + distance);
+            //        console.log(index + " bearing to next : " + bearing);
+            //    }
+            //    setTimeout(function () {
+            //        map.flyTo({
+            //            center: lnglat,
+            //            zoom: 16,
+            //            speed: 0.05,
+            //            curve: 0.1,
+            //            easing(t) {
+            //                return t /2;
+            //            }
+            //        });
+            //        //map.easeTo({
+            //        //    bearing: 192,
+            //        //    easing: easing
+            //        //})
+            //    }, 20000 * index);
+            //    console.log("lnglat : " + lnglat);
+            //});
+        });
+    });
+</script>

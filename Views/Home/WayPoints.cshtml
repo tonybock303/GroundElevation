@@ -1,0 +1,337 @@
+﻿@model Flythrough.Models.FlythroughModel
+@using Flythrough.Models
+@{
+    ViewBag.Title = "WayPoints";
+}
+<head>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.1.1/mapbox-gl.js"></script>
+    <script src="~/Scripts/jquery-3.4.1.js"></script>
+    <style>
+        #map {
+            border: 1px solid #ddd;
+            padding: 1px;
+            border-radius: 4px;
+            width: 800px;
+            height: 600px;
+        }
+
+        .mapContainer {
+            position: absolute;
+            width: 800px;
+            height: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .pageContainer {
+            display: flex;
+        }
+
+        .sideBar {
+            width: 550px;
+            height: 550px;
+            border-radius: 5px;
+            border: thin solid gray;
+            background-color: rgba(0,0,0,0.2);
+        }
+
+        .waypointGroup {
+            background: gainsboro;
+            padding: 2%;
+        }
+
+        .waypoint {
+            text-align: center;
+            width: 33%;
+            border-radius: 4px;
+        }
+
+        .elevation {
+            text-align: center;
+            width: 10%;
+            border-radius: 4px;
+        }
+        .groundElevation {
+            text-align: center;
+            width: 10%;
+            border-radius: 4px;
+        }
+        .waypointId {
+            width: 6%;
+        }
+
+        .wayPoints {
+            display: block;
+            margin: 0px auto;
+            height: 600px;
+            border: none;
+            border-radius: 3px;
+            font-size: 12px;
+            text-align: center;
+            color: #222;
+            background: #fff;
+        }
+    </style>
+</head>
+<br />
+<div class="pageContainer">
+    <div id="map"></div>
+
+    <div id="sideBar" class="sideBar">
+        @using (Html.BeginForm())
+        {
+            @Html.TextBox("name");
+            <div id="waypoints" class="wayPoints">
+                @if (Model.Cameras != null)
+                {
+                    for (int i = 0; i < Model.Cameras.Count(); i++)
+                    {
+                        var cam = Model.Cameras[i];
+                <div class="waypointGroup_@i">
+                    <label class="waypointId">@i</label>
+                    <input type="text" class="waypoint_@i waypoint" name="waypoint_@i" value="@cam.Lng,@cam.Lat" />
+                    <input type="text" class="waypoint_@i waypoint" name="target_@i" value="@cam.TargetLng,@cam.TargetLat" />
+                    <input type="text" class="waypoint_@i elevation" name="elevation_@i" value="@cam.Elevation" />
+                    <input type="text" class="waypoint_@i groundElevation"  value="@cam.GroundElevation" />
+                </div>
+                    }
+                }
+            </div>
+            <input type="submit" id="createButton" value="Create" />
+        }
+    </div>
+</div>
+
+@{
+    var midLng = -1.9833524039947577;
+    var midLat = 50.75872655532703;
+    var zoom = 12;
+    var pitch = 45;
+    var bearing = 80;
+
+
+    List<double[]> cameras = new List<double[]>();
+    List<double[]> targets = new List<double[]>();
+    if (Model.Cameras != null)
+    {
+        for (int i = 0; i < Model.Cameras.Count(); i++)
+        {
+            cameras.Add(Model.Cameras[i].GetCameraLngLat());
+            targets.Add(Model.Cameras[i].GetTargetLngLat());
+        }
+    }
+}
+
+<script>
+
+    $(document).ready(function () {
+        var isCameraClick = true;
+        var waypointCount = 0;
+
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoidGhlcGhvZW5peDI1IiwiYSI6ImNrbTR6M3h0bzA5ZXgyeGtuY2ZnMjB6cnoifQ.lvIzFpjHc1uKMGWWywoUNA';
+            var map = new mapboxgl.Map({
+                container: 'map',
+                zoom: @zoom,
+                center: [@midLng, @midLat],
+                pitch: @pitch,
+                bearing: @bearing,
+                style: 'mapbox://styles/mapbox/outdoors-v11',
+            });
+        map.on('click', function (e) {
+            console.log('A click event has occurred at ' + e.lngLat);
+            var lngLat = e.lngLat;
+            var lng = lngLat.lng;
+            var lat = lngLat.lat;
+            if (isCameraClick) {
+                var test = CreateCameraMarker(waypointCount, lng, lat);
+
+                CreateNewWaypoint(lng, lat);
+                isCameraClick = false;
+            }
+            else {
+                CreateTargetMarker(waypointCount, lng, lat);
+                AddNewTargetWayPoint(lng, lat);
+                isCameraClick = true;
+                waypointCount = waypointCount + 1;
+            }
+
+        });
+
+        var cameras = @Html.Raw(Json.Encode(cameras));
+        var targets = @Html.Raw(Json.Encode(targets));
+        if (cameras.length > 0) {
+            for (var i = 0; i < cameras.length; i++) {
+                console.log(targets[i][0] + ", " + targets[i][1]);
+                CreateCameraMarker(i, cameras[i][0], cameras[i][1]);
+                CreateTargetMarker(i, targets[i][0], targets[i][1]);
+            }
+        }
+
+        // $('div.mapboxgl-marker').length
+        // get markers
+        function CreateNewWaypoint(lng, lat) {
+            var group = CreateNewWaypointGroup();
+            var input = document.createElement("input");
+            input.type = "text";
+            input.className = "waypoint waypoint_" + waypointCount; // set the CSS class
+            input.setAttribute("name", "waypoint_" + waypointCount);
+            input.setAttribute("value", lng.toFixed(6) + ',' + lat.toFixed(6));
+            group.appendChild(input);
+        }
+
+        function CreateNewWaypointGroup() {
+            var group = document.createElement("div");
+            group.setAttribute("id", "waypointGroup_" + waypointCount);
+            group.className = "waypointGroup_" + waypointCount; // set the CSS class
+            var idLabel = document.createElement("label");
+            idLabel.className = "waypointId";
+            idLabel.innerHTML = waypointCount;
+            group.appendChild(idLabel);
+            document.getElementById('waypoints').appendChild(group);
+
+            return group;
+        }
+
+        function AddNewTargetWayPoint(lng, lat) {
+            var target = document.createElement("input");
+            target.type = "text";
+            target.className = "waypoint target_" + waypointCount; // set the CSS class
+            target.setAttribute("name", "target_" + waypointCount);
+            target.setAttribute("value", lng.toFixed(6) + ',' + lat.toFixed(6));
+            var elevation = document.createElement("input");
+            elevation.type = "text";
+            elevation.className = "elevation";
+            elevation.setAttribute("name", "elevation_" + waypointCount);
+            elevation.setAttribute("value", "200");
+            var groundElevation = document.createElement("input");
+            groundElevation.type = "text";
+            groundElevation.className = "groundElevation";
+            //groundElevation.setAttribute("name", "elevation_" + waypointCount);
+            //groundElevation.setAttribute("value", "200");
+            var group = document.getElementById('waypointGroup_' + waypointCount);
+            group.appendChild(target);
+            group.appendChild(elevation);
+            group.appendChild(groundElevation);
+
+        }
+        function CreateCameraMarker(id, lng, lat) {
+            return new mapboxgl.Marker({
+                color: "#FF0000",
+                draggable: true
+            })
+                .setLngLat([lng, lat])
+                .addTo(map)
+                .on('dragend', onCameraDragEnd).getElement().setAttribute("id", "waypointMarker_" + id);;
+        }
+        function CreateTargetMarker(id, lng, lat) {
+            return new mapboxgl.Marker({
+                color: "#00FF00",
+                draggable: true
+            })
+                .setLngLat([lng, lat])
+                .addTo(map)
+                .on('dragend', onTargetDragEnd).getElement().setAttribute("id", "targetMarker_" + id);;
+        }
+        function onCameraDragEnd() {
+            var id = this.getElement().getAttribute('id');
+            var lngLat = this.getLngLat();
+            var coordsText = lngLat.lat + "," + lngLat.lng;
+            console.log("camera id = " + id + " coords : " + coordsText);
+        };
+        function onTargetDragEnd() {
+            var id = this.getElement().getAttribute('id');
+            var lngLat = this.getLngLat();
+            var coordsText = lngLat.lat + "," + lngLat.lng;
+            console.log("TARGET id = " + id + " coords : " + coordsText);
+        };
+            @*var startMarker = new mapboxgl.Marker({
+                color: "#00FF00",
+                draggable: true
+            })
+                .setLngLat([@startLng, @startLat])
+                .addTo(map);
+
+            var finishMarker = new mapboxgl.Marker({
+                color: "#FF0000",
+                draggable: true
+            })
+                .setLngLat([@finishLng, @finishLat])
+                .addTo(map);
+
+            var startCoords = document.getElementById('StartCoords');
+            var finishCoords = document.getElementById('FinishCoords');
+
+            function onStartDragEnd() {
+                var lngLat = startMarker.getLngLat();
+                var coordsText = lngLat.lat + "," + lngLat.lng;
+                startCoords.value = coordsText;
+            };
+            function onFinishDragEnd() {
+                var lngLat = finishMarker.getLngLat();
+                var coordsText = lngLat.lat + "," + lngLat.lng;
+                finishCoords.value = coordsText;
+            };
+
+            startMarker.on('dragend', onStartDragEnd);
+            finishMarker.on('dragend', onFinishDragEnd);*@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            //map.on('load', function () {
+            //    map.addSource('mapbox-dem', {
+            //        'type': 'raster-dem',
+            //        'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+            //        'tileSize': 512,
+            //        'maxzoom': 17
+            //    });
+            //    // add the DEM source as a terrain layer with exaggerated height
+            //    map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1 });
+
+            //    // add a sky layer that will show when the map is highly pitched
+            //    map.addLayer({
+            //        'id': 'sky',
+            //        'type': 'sky',
+            //        'paint': {
+            //            'sky-type': 'atmosphere',
+            //            'sky-atmosphere-sun': [0.0, 0.0],
+            //            'sky-atmosphere-sun-intensity': 15
+            //        }
+            //    });
+            //});
+
+        //map.addControl(new mapboxgl.GeolocateControl({
+        //    positionOptions: {
+        //        enableHighAccuracy: true
+        //    },
+        //    trackUserLocation: true
+        //}));
+        //var scale = new mapboxgl.ScaleControl({
+        //    maxWidth: 80,
+        //    unit: 'imperial'
+        //});
+        //map.addControl(scale);
+
+        //scale.setUnit('metric');
+        //map.boxZoom.enable();
+
+
+        });
+</script>
+

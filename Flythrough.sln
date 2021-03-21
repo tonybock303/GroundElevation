@@ -3,9 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30621.155
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroundElevation", "GroundElevation.csproj", "{D82924D8-6FB8-4741-812E-562225937B64}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GroundElevation.Tests", "..\GroundElevation.Tests\GroundElevation.Tests.csproj", "{5E8AAD4E-50E0-4C5E-9159-D3EF3640B6E4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flythrough", "Flythrough.csproj", "{D82924D8-6FB8-4741-812E-562225937B64}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +15,6 @@ Global
 		{D82924D8-6FB8-4741-812E-562225937B64}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D82924D8-6FB8-4741-812E-562225937B64}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D82924D8-6FB8-4741-812E-562225937B64}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5E8AAD4E-50E0-4C5E-9159-D3EF3640B6E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5E8AAD4E-50E0-4C5E-9159-D3EF3640B6E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5E8AAD4E-50E0-4C5E-9159-D3EF3640B6E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5E8AAD4E-50E0-4C5E-9159-D3EF3640B6E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
